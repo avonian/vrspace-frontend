@@ -1,0 +1,114 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+    <head>
+      <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+      <meta content="utf-8" http-equiv="encoding">
+    <title>VRSpace:Selection</title>
+    <style type="text/css">
+    html, body {
+      width: 100%;
+      height:100%;
+      margin: 0px;
+      padding: 0px;
+    }
+    canvas {
+      width: 98%;
+      height:96%;
+      padding-left: 0;
+      padding-right: 0;
+      margin-left: auto;
+      margin-right: auto;
+      display: block;
+    }
+    </style>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+    <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
+    <script src="../assets/js/perlin.js"></script>
+    </head>
+  <body>
+
+  <!-- canvas is not focusable by default, tabIndex does that -->
+  <canvas id="renderCanvas" touch-action="none" tabIndex=0></canvas>
+
+<script>
+var canvas = document.getElementById("renderCanvas"); // Get the canvas element
+// focus canvas so we get keyboard events, otherwise need to click on it first
+canvas.focus();
+var engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
+var scene;
+
+import("./avatar-selection.js").then( (module) =>{
+  
+  var world = module.WORLD;
+
+  document.getElementById('nickname').addEventListener('input', (e)=>{
+    world.setName(e.target.value);
+  });
+
+  document.getElementById('chatBox').style.display = 'none';
+  document.getElementById('chatInput').addEventListener('change', (e)=>{
+    world.worldManager.sendMy({wrote:e.target.value});
+    e.target.value = '';
+    canvas.focus();
+  });
+
+  world.init(engine, 'avatar').then((s) => {
+    scene = s;
+    world.createSelection((avatar)=>{
+      console.log("Selected avatar: "+avatar.getUrl());
+    });
+    world.showPortals();
+    world.beforeEnter = () => {
+      document.getElementById('loginForm').style.display = 'none';
+    }
+    world.afterEnter = () => {
+      document.getElementById('chatBox').style.display = 'block';
+    }
+    world.afterExit = () => {
+      console.log('Exit:'+world.worldManager.error);
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('chatBox').style.display = 'none';
+      setTimeout(() => document.location.reload(), 5000);
+    }
+  });
+
+})
+
+//Watch for browser/canvas resize events
+window.addEventListener("resize", function () {
+  engine.resize();
+});
+
+function debugOnOff() {
+  console.log("Debug: "+scene.debugLayer.isVisible());
+  if ( scene.debugLayer.isVisible() ) {
+    scene.debugLayer.hide();
+  } else {
+    scene.debugLayer.show();
+  }
+}
+
+</script>
+
+<div id="loginForm" style="position:absolute;bottom:50px;right:45%;">
+<label for="nickname">Name:</label>
+<input id="nickname" type="text">
+</div>
+
+<div id="chatBox" style="position:absolute;bottom:50px;left:15%">
+<label for="chatInput">Chat:</label>
+<input id="chatInput" type="text" size=256 style="width:80%;">
+</div>
+
+<div style="position:absolute;bottom:10px;right:50%;">
+<button onClick="debugOnOff()">Debug</button>
+</div>
+
+<div id="videos" hidden>
+</div>
+
+</body>
+</html>
